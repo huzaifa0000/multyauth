@@ -1,0 +1,75 @@
+1. Update Migration User Table => Add Column name admin
+2. app/Models/User.php
+3. php artisan migrate
+4. composer require laravel/ui 
+5. php artisan ui bootstrap --auth 
+6. npm install
+7. npm install resolve-url-loader@^4.0.0 --save-dev --legacy-peer-deps ||   npm run dev
+8. php artisan make:middleware Admin
+9. public function handle($request, Closure $next)
+    {
+        if(auth()->user()->admin == 0){
+            return $next($request);
+        }
+   
+        return redirect(‘home’);
+    }
+10. app/Http/Kernel.php || 'admin' => \App\Http\Middleware\IsAdmin::class,
+
+11. Create Route || Route::get('adminhome', [HomeController::class, 'adminHome'])->name('adminhome')->middleware('admin');
+
+12. app/Http/Controllers/HomeController.php
+ public function adminHome()
+    {
+        return view('adminHome');
+    }
+13. Create Blade file || Home && adminHome
+14. Update on LoginController || use Illuminate\Http\Request;
+  public function __construct()
+    {
+        $this->middleware('guest')->except('logout');
+    }
+   
+    public function login(Request $request)
+    {   
+        $input = $request->all();
+   
+        $this->validate($request, [
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+   
+        if(auth()->attempt(array('email' => $input['email'], 'password' => $input['password'])))
+        {
+            if (auth()->user()->admin == 0) {
+                return redirect()->route('adminhome');
+            }else{
+                return redirect()->route('home');
+            }
+        }else{
+            return redirect()->route('login')
+                ->with('error','Email-Address And Password Are Wrong.');
+        }
+          
+    }
+
+15. php artisan make:seeder CreateUsersSeeder
+$user = [
+            [
+               'name'=>'Admin',
+               'email'=>'admin@itsolutionstuff.com',
+                'is_admin'=>'1',
+               'password'=> bcrypt('123456'),
+            ],
+            [
+               'name'=>'User',
+               'email'=>'user@itsolutionstuff.com',
+                'is_admin'=>'0',
+               'password'=> bcrypt('123456'),
+            ],
+        ];
+  
+        foreach ($user as $key => $value) {
+            User::create($value);
+        }
+16. php artisan db:seed --class=CreateUsersSeeder
